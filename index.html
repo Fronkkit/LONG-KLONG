@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>LONG-KLONG — ลอยกระทงออนไลน์</title>
+  <meta name="description" content="ลอยกระทงออนไลน์กับคนที่รัก ชวนทุกคนมาลอยในแม่น้ำเดียวกัน แบบ realtime">
+  <meta property="og:title" content="LONG-KLONG — มาลอยกระทงด้วยกันนะ">
+  <meta property="og:description" content="กดลิงก์แล้วประดิษฐ์กระทง ลอยในแม่น้ำเดียวกันได้เลย ไม่ต้องสมัคร">
+  <meta name="theme-color" content="#0B1026">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=Chonburi&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main id="app">
+
+  <!-- ============ หน้าแรก ============ -->
+  <section id="view-home" class="view home" hidden>
+    <div class="moon" aria-hidden="true"></div>
+    <header class="home-head">
+      <p class="eyebrow" id="home-date">คืนวันเพ็ญ เดือนสิบสอง</p>
+      <h1 class="display">LONG-KLONG</h1>
+      <p class="lead">อยู่ไกลกันแค่ไหน ก็ลอยในแม่น้ำเดียวกันได้</p>
+    </header>
+
+    <div id="config-warning" class="warning" hidden>
+      ยังไม่ได้ใส่ค่า Supabase ในไฟล์ <code>config.js</code> — เว็บจะยังสร้างห้องไม่ได้
+    </div>
+
+    <div class="field-group" role="radiogroup" aria-label="ประเภทห้องลอย">
+      <p class="label">สร้างห้องลอยของคุณ</p>
+      <button type="button" class="room-type is-on" role="radio" aria-checked="true" data-kind="couple">
+        <span class="room-type-title">คู่รัก</span>
+        <span class="room-type-sub">ลอยคู่ผูกด้ายแดง · ส่งลิงก์ให้แฟน</span>
+      </button>
+      <button type="button" class="room-type" role="radio" aria-checked="false" data-kind="group">
+        <span class="room-type-title">ครอบครัว &amp; เพื่อน</span>
+        <span class="room-type-sub">ส่งลิงก์ให้ทุกคนมาลอย · แท็กกันได้</span>
+      </button>
+      <a class="room-type" href="#/r/PUBLIC">
+        <span class="room-type-title">แม่น้ำสาธารณะ</span>
+        <span class="room-type-sub">ลอยร่วมกับทุกคนที่เข้ามา</span>
+      </a>
+    </div>
+
+    <label class="label" for="room-name">ตั้งชื่อห้อง</label>
+    <input id="room-name" class="input" type="text" maxlength="40" value="ห้องของเรา">
+
+    <button type="button" id="btn-create" class="btn btn-primary">สร้างห้อง แล้วไปลอยกัน</button>
+
+    <form id="form-join" class="join">
+      <label class="label" for="join-code">มีโค้ดห้องจากเพื่อนหรือแฟน?</label>
+      <div class="row">
+        <input id="join-code" class="input" type="text" placeholder="เช่น LOY-K7Q2" autocomplete="off" autocapitalize="characters">
+        <button type="submit" class="btn btn-ghost">เข้าห้อง</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ============ ห้อง / ริมน้ำ ============ -->
+  <section id="view-room" class="view room" hidden>
+    <header class="room-head">
+      <a href="#/" class="icon-btn" aria-label="กลับหน้าแรก">
+        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="room-title">
+        <h1 id="room-name-label">ห้องของเรา</h1>
+        <p id="room-stats"><span class="live-dot" aria-hidden="true"></span><span id="room-stats-text">กำลังเชื่อมต่อ…</span></p>
+      </div>
+      <button type="button" id="btn-who" class="avatars" aria-label="ดูว่าใครมาลอยบ้าง"></button>
+    </header>
+
+    <div id="river" class="river" aria-label="แม่น้ำ แตะกระทงเพื่อดูว่าใครลอย">
+      <svg class="ripples" viewBox="0 0 400 600" preserveAspectRatio="none" aria-hidden="true">
+        <ellipse cx="300" cy="40" rx="26" ry="6" fill="#F7E7C6" fill-opacity="0.18"/>
+        <ellipse cx="300" cy="56" rx="16" ry="3" fill="#F7E7C6" fill-opacity="0.10"/>
+        <path d="M0 140 Q50 130 100 140 T200 140 T300 140 T400 140"/>
+        <path d="M0 260 Q60 250 120 260 T240 260 T400 260"/>
+        <path d="M0 380 Q45 370 90 380 T180 380 T270 380 T400 380"/>
+        <path d="M0 500 Q55 492 110 500 T220 500 T400 500"/>
+      </svg>
+      <div id="river-items"></div>
+      <p id="river-empty" class="river-empty" hidden>แม่น้ำยังว่างอยู่ — ลอยใบแรกเลย</p>
+      <p class="river-hint">แตะกระทงเพื่อดูว่าใครลอย</p>
+    </div>
+
+    <nav class="dock">
+      <button type="button" id="btn-invite" class="dock-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M19 8v6M16 11h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        ชวนคน
+      </button>
+      <button type="button" id="btn-make" class="btn btn-primary dock-main">ประดิษฐ์กระทง</button>
+      <button type="button" id="btn-memory" class="dock-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 15l2-2 2 2 2-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        การ์ด
+      </button>
+    </nav>
+  </section>
+</main>
+
+<!-- ============ ชีตด้านล่าง ============ -->
+<div id="backdrop" class="backdrop" hidden></div>
+
+<!-- ตั้งชื่อ -->
+<section id="sheet-name" class="sheet" role="dialog" aria-modal="true" aria-labelledby="name-title" hidden>
+  <span class="grab" aria-hidden="true"></span>
+  <h2 id="name-title">ให้คนในห้องเห็นคุณชื่ออะไร</h2>
+  <form id="form-name" class="stack">
+    <label class="label" for="my-name">ชื่อเล่น</label>
+    <input id="my-name" class="input" type="text" maxlength="40" required autocomplete="nickname" placeholder="เช่น ฟร้อง">
+    <button type="submit" class="btn btn-primary">เข้าห้อง</button>
+  </form>
+</section>
+
+<!-- ประดิษฐ์กระทง -->
+<section id="sheet-make" class="sheet sheet-tall" role="dialog" aria-modal="true" aria-labelledby="make-title" hidden>
+  <span class="grab" aria-hidden="true"></span>
+  <div class="sheet-head">
+    <h2 id="make-title">ประดิษฐ์กระทง</h2>
+    <button type="button" class="icon-btn" data-close aria-label="ปิด"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+  </div>
+  <form id="form-make" class="stack">
+    <div class="preview" id="make-preview" aria-hidden="true"></div>
+
+    <div>
+      <p class="label">ฐานกระทง</p>
+      <div class="chips" id="make-bases"></div>
+    </div>
+    <div>
+      <p class="label">ดอกไม้ประดับ</p>
+      <div class="swatches" id="make-flowers"></div>
+    </div>
+
+    <div>
+      <label class="label" for="make-wish">คำอธิษฐาน</label>
+      <textarea id="make-wish" class="input" rows="3" maxlength="200" placeholder="ขอให้เราได้ลอยกระทงด้วยกันทุกปี…"></textarea>
+      <div class="seg" role="radiogroup" aria-label="ใครเห็นคำอธิษฐาน">
+        <button type="button" role="radio" aria-checked="true" data-vis="room" class="is-on">ทุกคนในห้องเห็น</button>
+        <button type="button" role="radio" aria-checked="false" data-vis="me">เก็บไว้คนเดียว</button>
+      </div>
+    </div>
+
+    <div id="make-tie-wrap">
+      <label class="label" for="make-tie">ผูกด้ายแดง (ลอยคู่)</label>
+      <select id="make-tie" class="input"></select>
+      <p class="hint">กระทงสองใบจะลอยติดกันไปตลอดสาย</p>
+    </div>
+
+    <div>
+      <p class="label">แท็กคนที่ลอยด้วยกัน</p>
+      <div class="chips" id="make-tag-suggest"></div>
+      <input id="make-tags" class="input" type="text" placeholder="พิมพ์ชื่อ คั่นด้วยเว้นวรรค">
+    </div>
+
+    <div>
+      <label class="label" for="make-for">ลอยให้ใคร (ถ้ามี)</label>
+      <input id="make-for" class="input" type="text" maxlength="40" placeholder="เช่น แม่ — คนที่มาไม่ได้">
+    </div>
+
+    <button type="submit" id="btn-float" class="btn btn-primary">ปล่อยกระทง</button>
+  </form>
+</section>
+
+<!-- รายละเอียดกระทง -->
+<section id="sheet-detail" class="sheet" role="dialog" aria-modal="true" aria-labelledby="detail-name" hidden>
+  <span class="grab" aria-hidden="true"></span>
+  <div class="detail-top">
+    <span class="avatar avatar-lg" id="detail-avatar"></span>
+    <div class="grow">
+      <h2 id="detail-name"></h2>
+      <p class="muted" id="detail-meta"></p>
+    </div>
+  </div>
+  <p class="wish" id="detail-wish"></p>
+  <div class="chips" id="detail-tags"></div>
+  <div class="row">
+    <button type="button" class="react" data-react="fire" aria-label="ส่งแสงเทียน">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3 4 5 6 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.2 1.6 1 2.5 2 2.5 0-3 0-5 1-8z" fill="none" stroke="#F4B860" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span id="detail-fire">0</span>
+    </button>
+    <button type="button" class="react" data-react="heart" aria-label="ส่งหัวใจ">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z" fill="none" stroke="#F28DB2" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span id="detail-heart">0</span>
+    </button>
+    <button type="button" class="btn btn-ghost grow" id="btn-tie-this">ลอยคู่กับใบนี้</button>
+  </div>
+</section>
+
+<!-- ใครมาลอยบ้าง -->
+<section id="sheet-who" class="sheet sheet-tall" role="dialog" aria-modal="true" aria-labelledby="who-title" hidden>
+  <span class="grab" aria-hidden="true"></span>
+  <div class="sheet-head">
+    <h2 id="who-title">ใครมาลอยบ้าง</h2>
+    <button type="button" class="icon-btn" data-close aria-label="ปิด"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="progress-wrap">
+    <p class="big" id="who-count"></p>
+    <div class="progress" role="progressbar" aria-label="สัดส่วนคนที่ลอยแล้ว" id="who-progress"><span></span></div>
+  </div>
+  <div class="chips" role="tablist" id="who-filters">
+    <button type="button" role="tab" data-f="all" class="chip is-on" aria-selected="true">ทั้งหมด</button>
+    <button type="button" role="tab" data-f="me" class="chip" aria-selected="false">แท็กฉัน</button>
+    <button type="button" role="tab" data-f="couple" class="chip" aria-selected="false">ลอยคู่</button>
+    <button type="button" role="tab" data-f="for" class="chip" aria-selected="false">ลอยให้</button>
+  </div>
+  <ul class="who-list" id="who-list"></ul>
+  <div id="who-pending-wrap">
+    <p class="label" id="who-pending-title"></p>
+    <ul class="who-list" id="who-pending"></ul>
+  </div>
+</section>
+
+<!-- ชวนคน -->
+<section id="sheet-invite" class="sheet" role="dialog" aria-modal="true" aria-labelledby="invite-title" hidden>
+  <span class="grab" aria-hidden="true"></span>
+  <div class="sheet-head">
+    <h2 id="invite-title">ชวนมาลอยด้วยกัน</h2>
+    <button type="button" class="icon-btn" data-close aria-label="ปิด"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="invite-card">
+    <img id="invite-qr" class="qr" alt="QR code สำหรับเข้าห้อง" width="120" height="120">
+    <div class="stack-sm">
+      <span class="muted">โค้ดห้อง</span>
+      <strong class="code" id="invite-code"></strong>
+      <span class="muted small">สแกนหรือกดลิงก์ เข้าได้เลย ไม่ต้องสมัคร</span>
+    </div>
+  </div>
+  <div class="grid3">
+    <a class="tile" id="invite-line" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11c0-4 3.6-7 8-7s8 3 8 7-3.6 7-8 7c-.9 0-1.7-.1-2.5-.3L6 19.5l.8-3.2C5 15 4 13.1 4 11z" fill="none" stroke="#6BD49B" stroke-width="2" stroke-linejoin="round"/></svg>LINE
+    </a>
+    <button type="button" class="tile" id="invite-share">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 14v5h14v-5" fill="none" stroke="#F28DB2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>แชร์
+    </button>
+    <button type="button" class="tile" id="invite-copy">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" fill="none" stroke="#F4B860" stroke-width="2" stroke-linecap="round"/></svg>คัดลอกลิงก์
+    </button>
+  </div>
+</section>
+
+<!-- การ์ดความทรงจำ -->
+<section id="sheet-memory" class="sheet sheet-tall" role="dialog" aria-modal="true" aria-labelledby="memory-title" hidden>
+  <span class="grab" aria-hidden="true"></span>
+  <div class="sheet-head">
+    <h2 id="memory-title">การ์ดความทรงจำ</h2>
+    <button type="button" class="icon-btn" data-close aria-label="ปิด"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="memory-card" id="memory-card">
+    <div class="memory-moon" aria-hidden="true"></div>
+    <p class="eyebrow" id="memory-year"></p>
+    <p class="display memory-title">เราลอย<br>ด้วยกัน</p>
+    <div class="memory-krathongs" id="memory-krathongs" aria-hidden="true"></div>
+    <div class="memory-foot">
+      <strong id="memory-names"></strong>
+      <span id="memory-others"></span>
+      <span class="memory-room" id="memory-room"></span>
+      <span class="display memory-brand">LONG-KLONG</span>
+    </div>
+  </div>
+  <div class="row">
+    <button type="button" class="btn btn-primary grow" id="btn-save-card">บันทึกรูป</button>
+    <button type="button" class="btn btn-ghost grow" id="btn-share-card">แชร์ลิงก์ห้อง</button>
+  </div>
+</section>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
