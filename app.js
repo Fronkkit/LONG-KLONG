@@ -166,8 +166,19 @@ function applyRename(oldName, newName, device) {
   state.members.delete(oldName);
   state.members.set(newName, { ...(m || {}), room_code: state.room.code, name: newName, device_id: device });
 }
-function ensureName() {
-  if (state.me) return Promise.resolve(state.me);
+const isBadErr = (e) => /inappropriate/i.test(e?.message || '');
+async function nameIsClean(n) {
+  if (!sb) return true;
+  const { data, error } = await sb.rpc('is_clean', { t: n });
+  return error ? true : data !== false;
+}
+async function ensureName() {
+  if (state.me && !(await nameIsClean(state.me))) {
+    state.me = '';
+    try { localStorage.removeItem('loy.name'); } catch { /* ignore */ }
+    toast('ชื่อเดิมมีคำไม่เหมาะสม กรุณาตั้งชื่อใหม่');
+  }
+  if (state.me) return state.me;
   renaming = false;
   $('#name-title').textContent = 'ให้คนในห้องเห็นคุณชื่ออะไร';
   $('#form-name button[type=submit]').textContent = 'เข้าห้อง';
@@ -179,6 +190,7 @@ $('#form-name').addEventListener('submit', async (e) => {
   e.preventDefault();
   const n = clean($('#my-name').value);
   if (!n) return;
+  if (!(await nameIsClean(n))) return toast('ชื่อนี้มีคำไม่เหมาะสม ลองชื่ออื่นนะ');
   if (renaming && state.room && state.me && n !== state.me) {
     const old = state.me;
     const hadOld = state.krathongs.some((k) => k.author === old);
@@ -188,7 +200,7 @@ $('#form-name').addEventListener('submit', async (e) => {
     btn.disabled = false;
     if (error) {
       console.error(error);
-      return toast(/taken/i.test(error.message) ? 'ชื่อนี้มีคนในห้องใช้แล้ว ลองชื่ออื่น' : 'เปลี่ยนชื่อไม่สำเร็จ ลองอีกครั้ง');
+      return toast(/taken/i.test(error.message) ? 'ชื่อนี้มีคนในห้องใช้แล้ว ลองชื่ออื่น' : isBadErr(error) ? 'ชื่อนี้มีคำไม่เหมาะสม ลองชื่ออื่นนะ' : 'เปลี่ยนชื่อไม่สำเร็จ ลองอีกครั้ง');
     }
     applyRename(old, n, DEVICE);
     toast(hadOld && !data ? `เปลี่ยนเป็น ${n} แล้ว (กระทงที่ลอยก่อนอัปเดตนี้ยังเป็นชื่อเดิม)` : `เปลี่ยนชื่อเป็น ${n} แล้ว`);
@@ -305,7 +317,7 @@ $('#btn-create').addEventListener('click', async () => {
     throw new Error('สร้างโค้ดห้องไม่สำเร็จ');
   } catch (err) {
     console.error(err);
-    toast('สร้างห้องไม่สำเร็จ ลองอีกครั้ง');
+    toast(isBadErr(err) ? 'ชื่อห้องมีคำไม่เหมาะสม ลองชื่ออื่นนะ' : 'สร้างห้องไม่สำเร็จ ลองอีกครั้ง');
   } finally {
     btn.disabled = false;
   }
@@ -687,7 +699,7 @@ $('#form-make').addEventListener('submit', async (e) => {
     toast(row.tied_to ? 'ปล่อยกระทงคู่แล้ว ผูกด้ายแดงเรียบร้อย' : 'ปล่อยกระทงแล้ว ทุกคนในห้องเห็นแล้ว');
   } catch (err) {
     console.error(err);
-    toast('ปล่อยกระทงไม่สำเร็จ ลองอีกครั้ง');
+    toast(isBadErr(err) ? 'มีคำไม่เหมาะสมในคำอธิษฐาน แท็ก หรือชื่อ กรุณาแก้ไข' : 'ปล่อยกระทงไม่สำเร็จ ลองอีกครั้ง');
   } finally {
     btn.disabled = false;
     btn.textContent = 'ปล่อยกระทง';

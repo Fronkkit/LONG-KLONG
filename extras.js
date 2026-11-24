@@ -59,6 +59,7 @@ document.head.append(h('style', { text: `
 .fx-board h3{margin:0 0 8px;font-size:15px}
 .fx-board ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:4px;font-size:14px}
 .fx-board li span{color:var(--gold);font-weight:700;margin-left:6px}
+.fx-del{margin-left:8px;min-height:32px;padding:0 10px;border-radius:10px;border:1px solid #E0485A;background:transparent;color:#FF9AA8;font-size:12px;font-weight:600}
 .fx-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .fx-arena{position:relative;height:380px;border-radius:18px;background:var(--river);border:1px solid var(--line);overflow:hidden;touch-action:manipulation;user-select:none}
 .fx-hud{display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:700}
@@ -372,8 +373,19 @@ async function topScores(game) {
   return out;
 }
 function boardEl(title, rows) {
+  const admin = safeGet('loy.admin');
   return h('div', { class: 'fx-board' }, h('h3', { text: title }),
-    rows.length ? h('ol', {}, rows.map((r) => h('li', {}, r.name, h('span', { text: String(r.score) })))) : h('p', { class: 'muted', style: 'margin:0', text: 'ยังไม่มีใครเล่น' }));
+    rows.length ? h('ol', {}, rows.map((r) => h('li', {}, r.name, h('span', { text: String(r.score) }),
+      admin ? h('button', { type: 'button', class: 'fx-del', text: 'ลบ', 'aria-label': `ลบคะแนนของ ${r.name}`, onclick: (e) => adminDelScore(e.currentTarget, r.name) }) : null)))
+      : h('p', { class: 'muted', style: 'margin:0', text: 'ยังไม่มีใครเล่น' }));
+}
+async function adminDelScore(btn, name) {
+  if (btn.dataset.armed !== '1') { btn.dataset.armed = '1'; btn.textContent = 'ยืนยัน?'; return; }
+  btn.disabled = true;
+  const { error } = await sb.rpc('admin_delete_scores', { p_key: safeGet('loy.admin') || '', p_room: roomCode(), p_name: name });
+  if (error) { btn.disabled = false; return toast('ลบไม่สำเร็จ (รหัสผู้ดูแลอาจไม่ถูกต้อง)'); }
+  toast(`ลบคะแนนของ ${name} แล้ว`);
+  openFair();
 }
 async function saveScore(game, score) {
   const code = roomCode();
