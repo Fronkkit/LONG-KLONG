@@ -204,10 +204,64 @@ $('#form-name').addEventListener('submit', async (e) => {
 
 /* ---------------- routing ---------------- */
 function route() {
+  if (location.hash === '#/admin') { showHome(); openAdmin(); return; }
   const m = location.hash.match(/^#\/r\/([A-Za-z0-9-]{4,20})$/);
   if (m) openRoom(m[1].toUpperCase());
   else showHome();
 }
+
+/* ---------------- ผู้ดูแล (ลบกระทงที่ไม่เหมาะสม) ---------------- */
+let ADMIN_KEY = safeGet('loy.admin') || '';
+function openAdmin() {
+  $('#admin-key').value = '';
+  $('#admin-status').textContent = ADMIN_KEY ? 'เครื่องนี้อยู่ในโหมดผู้ดูแลแล้ว' : 'ใส่รหัสผู้ดูแลเพื่อเปิดปุ่มลบกระทงบนเครื่องนี้';
+  $('#btn-admin-off').hidden = !ADMIN_KEY;
+  openSheet('#sheet-admin');
+}
+$('#form-admin').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const key = $('#admin-key').value;
+  if (!key || !sb) return;
+  const { data, error } = await sb.rpc('admin_check', { p_key: key });
+  if (error || !data) { $('#admin-status').textContent = 'รหัสไม่ถูกต้อง'; return; }
+  ADMIN_KEY = key;
+  safeSet('loy.admin', key);
+  closeSheet();
+  toast('เปิดโหมดผู้ดูแลแล้ว แตะกระทงเพื่อลบได้');
+  location.hash = '#/r/PUBLIC';
+});
+$('#btn-admin-off').addEventListener('click', () => {
+  ADMIN_KEY = '';
+  try { localStorage.removeItem('loy.admin'); } catch { /* ignore */ }
+  closeSheet();
+  toast('ปิดโหมดผู้ดูแลแล้ว');
+  location.hash = '#/';
+});
+function removeKrathong(id) {
+  if (!state.byId.has(id)) return;
+  state.byId.delete(id);
+  state.krathongs = state.krathongs.filter((k) => k.id !== id);
+  state.krathongs.forEach((k) => { if (k.tied_to === id) k.tied_to = null; });
+  state.els.get(id)?.remove();
+  state.els.delete(id);
+  state.reactions.delete(id);
+  if (state.selected === id) closeSheet();
+  renderAll();
+}
+let delArmed = null;
+$('#btn-admin-del').addEventListener('click', async () => {
+  const id = state.selected;
+  const btn = $('#btn-admin-del');
+  if (!id || !ADMIN_KEY) return;
+  if (delArmed !== id) { delArmed = id; btn.textContent = 'กดอีกครั้งเพื่อยืนยันลบ'; return; }
+  btn.disabled = true;
+  const { error } = await sb.rpc('admin_delete_krathong', { p_key: ADMIN_KEY, p_id: id });
+  btn.disabled = false;
+  delArmed = null;
+  if (error) { console.error(error); return toast('ลบไม่สำเร็จ (รหัสผู้ดูแลอาจไม่ถูกต้อง)'); }
+  removeKrathong(id);
+  toast('ลบกระทงแล้ว');
+});
 window.addEventListener('hashchange', route);
 
 /* ---------------- home ---------------- */
@@ -354,6 +408,9 @@ function subscribe(code) {
       refreshKt(cur);
       renderHeader(); renderWho();
       if (state.selected === k.id) renderDetail();
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'krathongs' }, ({ old: o }) => {
+      if (o?.id) removeKrathong(o.id);
     })
     .on('presence', { event: 'sync' }, () => {
       state.online = new Set(Object.keys(ch.presenceState()));
@@ -503,6 +560,9 @@ function renderDetail() {
   const canTie = k.author !== state.me && !isTaken(k);
   tieBtn.hidden = !canTie;
   $('#btn-rename-detail').hidden = k.author !== state.me;
+  const del = $('#btn-admin-del');
+  del.hidden = !ADMIN_KEY;
+  if (delArmed !== k.id) { delArmed = null; del.textContent = 'ลบกระทงนี้ (ผู้ดูแล)'; }
 }
 $$('.react').forEach((b) => b.addEventListener('click', async () => {
   const k = state.byId.get(state.selected);

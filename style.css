@@ -254,6 +254,9 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .rename-link strong { color: var(--text); }
 .rename-link span { color: var(--gold); font-weight: 600; }
 
+/* ---------- ผู้ดูแล ---------- */
+.btn-danger { background: transparent; color: #FF9AA8; border-color: #E0485A; min-height: 48px; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }

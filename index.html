@@ -192,6 +192,7 @@
     <button type="button" class="btn btn-ghost grow" id="btn-tie-this">ลอยคู่กับใบนี้</button>
     <button type="button" class="btn btn-ghost grow" id="btn-rename-detail" hidden>เปลี่ยนชื่อ</button>
   </div>
+  <button type="button" class="btn btn-danger" id="btn-admin-del" hidden>ลบกระทงนี้ (ผู้ดูแล)</button>
 </section>
 
 <!-- ใครมาลอยบ้าง -->
@@ -270,6 +271,19 @@
     <button type="button" class="btn btn-primary grow" id="btn-save-card">บันทึกรูป</button>
     <button type="button" class="btn btn-ghost grow" id="btn-share-card">แชร์ลิงก์ห้อง</button>
   </div>
+</section>
+
+<!-- ผู้ดูแล -->
+<section id="sheet-admin" class="sheet" role="dialog" aria-modal="true" aria-labelledby="admin-title" hidden>
+  <span class="grab" aria-hidden="true"></span>
+  <h2 id="admin-title">โหมดผู้ดูแล</h2>
+  <p class="muted" id="admin-status" style="margin:0"></p>
+  <form id="form-admin" class="stack">
+    <label class="label" for="admin-key">รหัสผู้ดูแล</label>
+    <input id="admin-key" class="input" type="password" autocomplete="current-password" required>
+    <button type="submit" class="btn btn-primary">เปิดโหมดผู้ดูแล</button>
+    <button type="button" class="btn btn-ghost" id="btn-admin-off" hidden>ปิดโหมดผู้ดูแลบนเครื่องนี้</button>
+  </form>
 </section>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
