@@ -148,3 +148,26 @@ begin
 end $$;
 revoke all on function public.rename_me(text, uuid, text, text) from public;
 grant execute on function public.rename_me(text, uuid, text, text) to anon, authenticated;
+
+-- v5: ผู้ดูแลลบกระทงที่ไม่เหมาะสม -------------------------------------------
+create table if not exists public.app_admin (id int primary key default 1 check (id = 1), key_hash text not null);
+alter table public.app_admin enable row level security;
+revoke all on public.app_admin from anon, authenticated;
+create or replace function public.admin_check(p_key text) returns boolean
+language sql security definer set search_path = public, extensions as $$
+  select exists (select 1 from public.app_admin where key_hash = extensions.crypt(p_key, key_hash));
+$$;
+create or replace function public.admin_delete_krathong(p_key text, p_id uuid) returns boolean
+language plpgsql security definer set search_path = public, extensions as $$
+begin
+  if not public.admin_check(p_key) then raise exception 'not allowed'; end if;
+  delete from public.krathongs where id = p_id;
+  return found;
+end $$;
+revoke all on function public.admin_check(text) from public;
+revoke all on function public.admin_delete_krathong(text, uuid) from public;
+grant execute on function public.admin_check(text) to anon, authenticated;
+grant execute on function public.admin_delete_krathong(text, uuid) to anon, authenticated;
+-- ตั้งรหัสผู้ดูแล (เจ้าของเว็บรันเองใน SQL Editor แล้วเปลี่ยนข้อความในเครื่องหมาย ' ' เป็นรหัสของตัวเอง):
+-- insert into public.app_admin (id, key_hash) values (1, extensions.crypt('ใส่รหัสยาว ๆ ที่นี่', extensions.gen_salt('bf')))
+-- on conflict (id) do update set key_hash = excluded.key_hash;
