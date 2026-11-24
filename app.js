@@ -137,22 +137,69 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet
 $$('[data-close]').forEach((b) => b.addEventListener('click', closeSheet));
 
 /* ---------------- name ---------------- */
+const DEVICE = safeGet('loy.device') || (() => { const id = crypto.randomUUID(); safeSet('loy.device', id); return id; })();
 let nameResolver = null;
+let renaming = false;
+function openRename() {
+  renaming = true;
+  $('#name-title').textContent = 'เปลี่ยนชื่อที่คนในห้องเห็น';
+  $('#form-name button[type=submit]').textContent = 'บันทึกชื่อใหม่';
+  $('#my-name').value = state.me;
+  openSheet('#sheet-name');
+}
+function refreshKt(k) {
+  const n = state.els.get(k.id);
+  if (!n) return;
+  const label = n.querySelector('.kt-name');
+  if (label) label.textContent = k.author;
+  n.setAttribute('aria-label', `กระทงของ ${k.author}`);
+}
+function applyRename(oldName, newName, device) {
+  for (const k of state.krathongs) {
+    let changed = false;
+    if (k.author === oldName && k.device_id === device) { k.author = newName; changed = true; }
+    if ((k.tags || []).includes(oldName)) { k.tags = k.tags.map((t) => (t === oldName ? newName : t)); }
+    if (k.for_name === oldName) k.for_name = newName;
+    if (changed) refreshKt(k);
+  }
+  const m = state.members.get(oldName);
+  state.members.delete(oldName);
+  state.members.set(newName, { ...(m || {}), room_code: state.room.code, name: newName, device_id: device });
+}
 function ensureName() {
   if (state.me) return Promise.resolve(state.me);
+  renaming = false;
+  $('#name-title').textContent = 'ให้คนในห้องเห็นคุณชื่ออะไร';
+  $('#form-name button[type=submit]').textContent = 'เข้าห้อง';
   $('#my-name').value = '';
   openSheet('#sheet-name');
   return new Promise((res) => { nameResolver = res; });
 }
-$('#form-name').addEventListener('submit', (e) => {
+$('#form-name').addEventListener('submit', async (e) => {
   e.preventDefault();
   const n = clean($('#my-name').value);
   if (!n) return;
+  if (renaming && state.room && state.me && n !== state.me) {
+    const old = state.me;
+    const hadOld = state.krathongs.some((k) => k.author === old);
+    const btn = $('#form-name button[type=submit]');
+    btn.disabled = true;
+    const { data, error } = await sb.rpc('rename_me', { p_room: state.room.code, p_device: DEVICE, p_old: old, p_new: n });
+    btn.disabled = false;
+    if (error) {
+      console.error(error);
+      return toast(/taken/i.test(error.message) ? 'ชื่อนี้มีคนในห้องใช้แล้ว ลองชื่ออื่น' : 'เปลี่ยนชื่อไม่สำเร็จ ลองอีกครั้ง');
+    }
+    applyRename(old, n, DEVICE);
+    toast(hadOld && !data ? `เปลี่ยนเป็น ${n} แล้ว (กระทงที่ลอยก่อนอัปเดตนี้ยังเป็นชื่อเดิม)` : `เปลี่ยนชื่อเป็น ${n} แล้ว`);
+  }
   state.me = n;
   safeSet('loy.name', n);
+  renaming = false;
   closeSheet();
   nameResolver?.(n);
   nameResolver = null;
+  if (state.room) renderAll();
 });
 
 /* ---------------- routing ---------------- */
@@ -275,7 +322,7 @@ function leaveRoom() {
 }
 
 async function upsertMember(status) {
-  const row = { room_code: state.room.code, name: state.me, status, updated_at: new Date().toISOString() };
+  const row = { room_code: state.room.code, name: state.me, status, device_id: DEVICE, updated_at: new Date().toISOString() };
   const prev = state.members.get(state.me);
   if (prev?.status === 'floated' && status === 'joined') return;
   state.members.set(state.me, row);
@@ -295,8 +342,18 @@ function subscribe(code) {
       applyReaction(r);
       if (state.selected === r.krathong_id) renderDetail();
     })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'members', filter: `room_code=eq.${code}` }, ({ new: m }) => {
-      if (m?.name) { state.members.set(m.name, m); renderHeader(); renderWho(); }
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'members', filter: `room_code=eq.${code}` }, ({ eventType, new: m, old: o }) => {
+      if (eventType === 'DELETE') { if (o?.name) state.members.delete(o.name); }
+      else if (m?.name) state.members.set(m.name, m);
+      renderHeader(); renderWho();
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'krathongs', filter: `room_code=eq.${code}` }, ({ new: k }) => {
+      const cur = state.byId.get(k.id);
+      if (!cur) return;
+      Object.assign(cur, k);
+      refreshKt(cur);
+      renderHeader(); renderWho();
+      if (state.selected === k.id) renderDetail();
     })
     .on('presence', { event: 'sync' }, () => {
       state.online = new Set(Object.keys(ch.presenceState()));
@@ -445,6 +502,7 @@ function renderDetail() {
   const tieBtn = $('#btn-tie-this');
   const canTie = k.author !== state.me && !isTaken(k);
   tieBtn.hidden = !canTie;
+  $('#btn-rename-detail').hidden = k.author !== state.me;
 }
 $$('.react').forEach((b) => b.addEventListener('click', async () => {
   const k = state.byId.get(state.selected);
@@ -556,6 +614,7 @@ $('#form-make').addEventListener('submit', async (e) => {
       tags,
       charms: [...d.charms].filter((c) => CHARMS[c]).slice(0, MAX_CHARMS),
       for_name: clean($('#make-for').value) || null,
+      device_id: DEVICE,
       lane: Math.round((0.08 + Math.random() * 0.84) * 1000) / 1000,
     };
     const { data, error } = await sb.from('krathongs').insert(row).select().single();
@@ -577,6 +636,8 @@ $('#form-make').addEventListener('submit', async (e) => {
 
 /* ---------------- who ---------------- */
 $('#btn-who').addEventListener('click', () => { renderWho(); openSheet('#sheet-who'); });
+$('#btn-rename').addEventListener('click', openRename);
+$('#btn-rename-detail').addEventListener('click', openRename);
 $$('#who-filters .chip').forEach((b) => b.addEventListener('click', () => {
   state.whoFilter = b.dataset.f;
   $$('#who-filters .chip').forEach((x) => {
@@ -592,6 +653,7 @@ function renderWho() {
   const floated = floatedNames();
   const everyone = state.room.kind === 'public' ? floated : new Set([...state.members.keys(), ...floated]);
   const total = Math.max(everyone.size, 1);
+  $('#me-name').textContent = state.me;
   const count = $('#who-count');
   count.replaceChildren(String(floated.size), el('small', { text: ` / ${everyone.size} คนลอยแล้ว` }));
   const bar = $('#who-progress');
