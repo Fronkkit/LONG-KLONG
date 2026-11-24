@@ -171,3 +171,9 @@ grant execute on function public.admin_delete_krathong(text, uuid) to anon, auth
 -- ตั้งรหัสผู้ดูแล (เจ้าของเว็บรันเองใน SQL Editor แล้วเปลี่ยนข้อความในเครื่องหมาย ' ' เป็นรหัสของตัวเอง):
 -- insert into public.app_admin (id, key_hash) values (1, extensions.crypt('ใส่รหัสยาว ๆ ที่นี่', extensions.gen_salt('bf')))
 -- on conflict (id) do update set key_hash = excluded.key_hash;
+
+-- v6: ตัวกรองคำไม่เหมาะสม + ผู้ดูแลลบคะแนน -------------------------------------
+-- (ตาราง bad_words / ok_words, ฟังก์ชัน norm_text / is_clean, trigger guard_text บน krathongs, members, scores, rooms
+--  และฟังก์ชัน admin_delete_scores — รันแล้วในโปรเจกต์ Supabase; ดูรายการคำได้ใน Table Editor ตาราง bad_words)
+-- เพิ่มคำต้องห้ามเอง: insert into public.bad_words (word) values ('คำใหม่') on conflict do nothing;
+-- อนุญาตคำที่โดนบล็อกผิด: insert into public.ok_words (word) values ('คำที่ถูกต้อง') on conflict do nothing;
