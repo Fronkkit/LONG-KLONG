@@ -93,3 +93,28 @@ begin
     end if;
   end loop;
 end $$;
+
+-- v2: คะแนนเกมซุ้มงานวัด ------------------------------------------------
+create table if not exists public.scores (
+  id          bigint generated always as identity primary key,
+  room_code   text not null references public.rooms(code) on delete cascade,
+  name        text not null check (char_length(name) between 1 and 40),
+  game        text not null check (game in ('balloon', 'ring')),
+  score       int  not null check (score between 0 and 200),
+  created_at  timestamptz not null default now()
+);
+create index if not exists scores_board_idx on public.scores (room_code, game, score desc);
+grant select, insert on public.scores to anon, authenticated;
+grant usage, select on all sequences in schema public to anon, authenticated;
+alter table public.scores enable row level security;
+drop policy if exists scores_read on public.scores;
+drop policy if exists scores_insert on public.scores;
+create policy scores_read   on public.scores for select to anon, authenticated using (true);
+create policy scores_insert on public.scores for insert to anon, authenticated with check (true);
+
+-- v3: ของที่ลอยไปกับกระทง ------------------------------------------------
+alter table public.krathongs add column if not exists charms text[] not null default '{}';
+alter table public.krathongs drop constraint if exists krathongs_charms_check;
+alter table public.krathongs add constraint krathongs_charms_check check (
+  cardinality(charms) <= 3 and charms <@ array['pdf','zip','boss','dog','cat','mail','bill','bug','ex','ot','lazy','monday']::text[]
+);
