@@ -118,3 +118,33 @@ alter table public.krathongs drop constraint if exists krathongs_charms_check;
 alter table public.krathongs add constraint krathongs_charms_check check (
   cardinality(charms) <= 3 and charms <@ array['pdf','zip','boss','dog','cat','mail','bill','bug','ex','ot','lazy','monday']::text[]
 );
+
+-- v4: เปลี่ยนชื่อ (ยืนยันตัวตนด้วย device_id ที่เก็บในเครื่อง) ------------------------
+alter table public.krathongs add column if not exists device_id uuid;
+alter table public.members   add column if not exists device_id uuid;
+create or replace function public.rename_me(p_room text, p_device uuid, p_old text, p_new text)
+returns integer language plpgsql security definer set search_path = public as $$
+declare n integer := 0; st text := 'joined';
+begin
+  p_new := btrim(p_new);
+  if p_device is null or p_new is null or char_length(p_new) not between 1 and 40 or p_new = p_old then return 0; end if;
+  if exists (select 1 from members where room_code = p_room and name = p_new and device_id is not null and device_id <> p_device) then
+    raise exception 'name taken';
+  end if;
+  update krathongs set author = p_new where room_code = p_room and device_id = p_device and author = p_old;
+  get diagnostics n = row_count;
+  if n > 0 then
+    update krathongs set tags = array_replace(tags, p_old, p_new) where room_code = p_room and p_old = any(tags);
+    update krathongs set for_name = p_new where room_code = p_room and for_name = p_old;
+    st := 'floated';
+  end if;
+  if exists (select 1 from members where room_code = p_room and name = p_old and status = 'floated' and (device_id = p_device or device_id is null)) then st := 'floated'; end if;
+  delete from members where room_code = p_room and name = p_old and (device_id = p_device or device_id is null);
+  insert into members (room_code, name, status, device_id, updated_at) values (p_room, p_new, st, p_device, now())
+  on conflict (room_code, name) do update set device_id = excluded.device_id,
+    status = case when members.status = 'floated' or excluded.status = 'floated' then 'floated' else 'joined' end,
+    updated_at = now();
+  return n;
+end $$;
+revoke all on function public.rename_me(text, uuid, text, text) from public;
+grant execute on function public.rename_me(text, uuid, text, text) to anon, authenticated;
