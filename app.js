@@ -371,7 +371,7 @@ function renderRiver() {
     });
     b.insertAdjacentHTML('beforeend', krathongSVG(k.base, k.flower));
     const cs = charmIds(k.charms);
-    if (cs.length) b.insertAdjacentHTML('beforeend', `<span class="kt-charms">${cs.map((c) => charmSVG(c, 18)).join('')}</span>`);
+    if (cs.length) b.insertAdjacentHTML('beforeend', `<span class="kt-charms">${cs.map((c) => charmSVG(c, 26)).join('')}</span>`);
     b.append(el('span', { class: 'kt-name', text: k.author }));
     if (k.tied_to && state.byId.has(k.tied_to)) b.prepend(el('span', { class: 'kt-string', 'aria-hidden': 'true' }));
     box.append(b);
