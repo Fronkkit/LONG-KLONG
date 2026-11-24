@@ -51,7 +51,7 @@ document.head.append(h('style', { text: `
 .fx-panel{width:100%;max-width:560px;max-height:92dvh;overflow-y:auto;background:var(--surface);border-radius:24px 24px 0 0;border-top:1px solid var(--line);padding:14px 18px calc(22px + var(--safe-b));display:flex;flex-direction:column;gap:14px;animation:up .22s ease-out}
 .fx-head{display:flex;align-items:center;gap:8px}
 .fx-head h2{margin:0;font-size:19px;flex:1}
-.fx-booths{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.fx-booths{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .fx-booth{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 6px 12px;border-radius:18px;border:1.5px solid var(--line);background:var(--bg);color:var(--text);font-size:14px;font-weight:600;position:relative;overflow:hidden}
 .fx-booth::before{content:'';position:absolute;left:0;right:0;top:0;height:10px;background:repeating-linear-gradient(90deg,#E0485A 0 14px,#F7E7C6 14px 28px)}
 .fx-booth span.sub{font-size:11px;color:var(--muted);font-weight:500}
@@ -394,18 +394,20 @@ async function saveScore(game, score) {
 }
 
 function openFair() {
-  const boards = h('div', { class: 'fx-cols' }, boardEl('เซียนปาลูกโป่ง', []), boardEl('เซียนโยนห่วง', []));
+  const titles = [['balloon', 'เซียนปาลูกโป่ง'], ['frenzy', 'เซียนฝนลูกโป่ง'], ['ring', 'เซียนโยนห่วง']];
+  const boards = h('div', { class: 'fx-cols' }, titles.map(([, t]) => boardEl(t, [])));
   const booth = (name, sub, fn) => h('button', { type: 'button', class: 'fx-booth', onclick: fn }, h('span', { text: name }), h('span', { class: 'sub', text: sub }));
   openModal('ซุ้มงานวัด', h('div', { style: 'display:flex;flex-direction:column;gap:14px' },
     h('p', { class: 'muted', style: 'margin:0', text: 'เล่นได้ไม่จำกัด คะแนนดีสุดขึ้นป้ายให้ทุกคนในห้องเห็น' }),
     h('div', { class: 'fx-booths' },
+      booth('ฝนลูกโป่ง', 'ลูกโป่งเต็มจอ 20 วิ', gameFrenzy),
       booth('ปาลูกโป่ง', '20 วินาที', gameBalloon),
       booth('โยนห่วง', '6 ห่วง', gameRing),
       booth('สอยดาว', 'ลุ้นรางวัล', gameStars)),
     boards));
-  Promise.all([topScores('balloon'), topScores('ring')]).then(([a, b]) => {
+  Promise.all(titles.map(([g]) => topScores(g))).then((res) => {
     if (!modal) return;
-    boards.replaceChildren(boardEl('เซียนปาลูกโป่ง', a), boardEl('เซียนโยนห่วง', b));
+    boards.replaceChildren(...titles.map(([, t], i) => boardEl(t, res[i])));
   }).catch(() => {});
 }
 
@@ -418,10 +420,19 @@ function resultView(title, scoreText, again) {
       h('button', { type: 'button', class: 'btn btn-ghost grow', text: 'กลับซุ้ม', onclick: openFair })));
 }
 
-/* --- เกม 1: ปาลูกโป่ง ---
- * ขยับลูกโป่งด้วย JS และตรวจการแตะจากพิกัดนิ้วเอง (ระยะแตะกว้าง)
+/* --- เกม 1 + 4: ปาลูกโป่ง / ฝนลูกโป่ง ---
+ * ขยับลูกโป่งด้วย JS และตรวจการแตะจากพิกัดนิ้วเอง
  * เพื่อให้เล่นบนมือถือทุกรุ่นได้ ไม่พึ่ง hit-test ของ element ที่กำลังเคลื่อนที่ */
-function gameBalloon() {
+const BALLOON_MODES = {
+  balloon: { title: 'ปาลูกโป่ง', board: 'ปาลูกโป่งแตก', size: 58, hitR: 34, spawnMs: 420, perSpawn: [1, 1], dur: [3.2, 2.0], ramp: 0.08, minDur: 1.6, multiTouch: false,
+    hint: 'แตะลูกโป่งให้แตกมากที่สุดใน 20 วินาที (นิ้วเดียว)' },
+  frenzy:  { title: 'ฝนลูกโป่ง', board: 'ฝนลูกโป่ง', size: 44, hitR: 30, spawnMs: 120, perSpawn: [1, 3], dur: [2.6, 1.6], ramp: 0.05, minDur: 1.3, multiTouch: true,
+    hint: 'ลูกโป่งขึ้นมาเต็มจอ ใช้กี่นิ้วก็ได้ ใครแตกเยอะสุดใน 20 วินาทีชนะ' },
+};
+function gameBalloon() { balloonGame('balloon'); }
+function gameFrenzy() { balloonGame('frenzy'); }
+function balloonGame(mode) {
+  const M = BALLOON_MODES[mode];
   let score = 0, left = 20, alive = true, raf = 0, last = performance.now();
   const balloons = [];
   const scoreEl = h('span', { class: 'big', text: '0' });
@@ -429,20 +440,25 @@ function gameBalloon() {
   const arena = h('div', { class: 'fx-arena', role: 'application', 'aria-label': 'แตะลูกโป่งให้แตก' });
   const wrap = h('div', { style: 'display:flex;flex-direction:column;gap:10px' },
     h('div', { class: 'fx-hud' }, h('span', {}, 'แตกแล้ว ', scoreEl), timeEl), arena,
-    h('p', { class: 'muted', style: 'margin:0;text-align:center', text: 'แตะลูกโป่งให้แตกมากที่สุดใน 20 วินาที' }));
-  openModal('ปาลูกโป่ง', wrap);
+    h('p', { class: 'muted', style: 'margin:0;text-align:center', text: M.hint }));
+  openModal(M.title, wrap);
   const colors = ['#F28DB2', '#F4B860', '#6BD49B', '#7FC8F8', '#B9A7F0', '#E0485A'];
-  function spawn() {
-    if (!alive) return;
+  const S = M.size, SH = Math.round(S * 74 / 58), CX = S / 2, CY = S * 30 / 58;
+  function spawnOne() {
     const W = arena.clientWidth, H = arena.clientHeight;
     const c = colors[Math.floor(Math.random() * colors.length)];
-    const el = h('div', { class: 'fx-balloon', 'aria-hidden': 'true' });
-    el.innerHTML = `<svg width="58" height="74" viewBox="0 0 58 74"><ellipse cx="29" cy="28" rx="22" ry="26" fill="${c}"/><ellipse cx="21" cy="18" rx="5" ry="8" fill="#fff" fill-opacity=".35"/><path d="M26 53h6l-3 5z" fill="${c}"/><path d="M29 58q-4 8 0 16" fill="none" stroke="#C5CAE3" stroke-width="1.2"/></svg>`;
-    const dur = Math.max(2, 3.4 + Math.random() * 2.2 - (20 - left) * 0.06);
-    const b = { el, x: 4 + Math.random() * Math.max(10, W - 66), y: H + 10, v: (H + 100) / dur, popped: false };
+    const el = h('div', { class: 'fx-balloon', 'aria-hidden': 'true', style: `width:${S}px;height:${SH}px` });
+    el.innerHTML = `<svg width="${S}" height="${SH}" viewBox="0 0 58 74"><ellipse cx="29" cy="28" rx="22" ry="26" fill="${c}"/><ellipse cx="21" cy="18" rx="5" ry="8" fill="#fff" fill-opacity=".35"/><path d="M26 53h6l-3 5z" fill="${c}"/><path d="M29 58q-4 8 0 16" fill="none" stroke="#C5CAE3" stroke-width="1.2"/></svg>`;
+    const dur = Math.max(M.minDur, M.dur[0] + Math.random() * M.dur[1] - (20 - left) * M.ramp);
+    const b = { el, x: 2 + Math.random() * Math.max(10, W - S - 4), y: H + 6, v: (H + SH + 20) / dur, popped: false };
     el.style.transform = `translate3d(${b.x}px, ${b.y}px, 0)`;
     arena.append(el);
     balloons.push(b);
+  }
+  function spawn() {
+    if (!alive) return;
+    const n = M.perSpawn[0] + Math.floor(Math.random() * (M.perSpawn[1] - M.perSpawn[0] + 1));
+    for (let k = 0; k < n; k++) spawnOne();
   }
   function loop(t) {
     const dt = Math.min(0.05, (t - last) / 1000); last = t;
@@ -450,7 +466,7 @@ function gameBalloon() {
       const b = balloons[i];
       if (b.popped) continue;
       b.y -= b.v * dt;
-      if (b.y < -90) { b.el.remove(); balloons.splice(i, 1); continue; }
+      if (b.y < -SH - 10) { b.el.remove(); balloons.splice(i, 1); continue; }
       b.el.style.transform = `translate3d(${b.x}px, ${b.y}px, 0)`;
     }
     if (alive) raf = requestAnimationFrame(loop);
@@ -460,10 +476,10 @@ function gameBalloon() {
     if (!alive) return;
     const r = arena.getBoundingClientRect();
     const px = clientX - r.left, py = clientY - r.top;
-    let best = null, bestD = 52;
+    let best = null, bestD = M.hitR;
     for (const b of balloons) {
       if (b.popped) continue;
-      const d = Math.hypot(px - (b.x + 29), py - (b.y + 30));
+      const d = Math.hypot(px - (b.x + CX), py - (b.y + CY));
       if (d < bestD) { best = b; bestD = d; }
     }
     if (!best) return;
@@ -471,16 +487,24 @@ function gameBalloon() {
     best.el.classList.add('pop');
     score++; scoreEl.textContent = score;
     Music.blip(700 + Math.random() * 400);
-    if (navigator.vibrate) navigator.vibrate(15);
+    if (navigator.vibrate) navigator.vibrate(10);
     setTimeout(() => { best.el.remove(); const k = balloons.indexOf(best); if (k >= 0) balloons.splice(k, 1); }, 160);
   }
   if (window.PointerEvent) {
-    arena.addEventListener('pointerdown', (e) => { e.preventDefault(); hit(e.clientX, e.clientY); });
+    arena.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      if (!M.multiTouch && e.isPrimary === false) return; // ปาลูกโป่งธรรมดา: นับเฉพาะนิ้วแรก
+      hit(e.clientX, e.clientY);
+    });
   } else {
-    arena.addEventListener('touchstart', (e) => { e.preventDefault(); for (const tc of e.changedTouches) hit(tc.clientX, tc.clientY); }, { passive: false });
+    arena.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const ts = M.multiTouch ? [...e.changedTouches] : (e.touches.length === 1 ? [e.changedTouches[0]] : []);
+      for (const tc of ts) hit(tc.clientX, tc.clientY);
+    }, { passive: false });
     arena.addEventListener('mousedown', (e) => hit(e.clientX, e.clientY));
   }
-  const spawner = setInterval(spawn, 420);
+  const spawner = setInterval(spawn, M.spawnMs);
   spawn();
   const clock = setInterval(() => {
     left--; timeEl.textContent = `${left} วิ`;
@@ -489,9 +513,9 @@ function gameBalloon() {
   function finish() {
     if (!alive) return;
     alive = false; clearInterval(spawner); clearInterval(clock); cancelAnimationFrame(raf);
-    saveScore('balloon', score).catch(() => {});
-    sendFx('game', { text: `${myName()} ปาลูกโป่งแตก ${score} ลูก!` });
-    wrap.replaceWith(resultView('ปาลูกโป่งแตก', `${score} ลูก`, gameBalloon));
+    saveScore(mode, score).catch(() => {});
+    sendFx('game', { text: `${myName()} เล่น${M.title} แตก ${score} ลูก!` });
+    wrap.replaceWith(resultView(M.board, `${score} ลูก`, () => balloonGame(mode)));
   }
   cleanup = () => { alive = false; clearInterval(spawner); clearInterval(clock); cancelAnimationFrame(raf); };
 }
