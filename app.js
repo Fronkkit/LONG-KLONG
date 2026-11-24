@@ -19,6 +19,30 @@ const FLOWERS = {
   jasmine:  { name: 'มะลิ',     c: '#F3F1E8' },
 };
 const AVATAR_COLORS = ['#F4B860', '#F28DB2', '#B9A7F0', '#6BD49B', '#7FC8F8', '#F3F1E8', '#FFB38A'];
+
+/* ของที่ลอยไปกับกระทง (ไอคอนวาดเอง ไม่ใช้รูปจากภายนอก) */
+const CHARMS = {
+  pdf:    { label: 'งาน', svg: '<rect x="6" y="3" width="20" height="26" rx="2" fill="#F3F1E8"/><path d="M20 3v6h6z" fill="#C5CAE3"/><rect x="6" y="9" width="14" height="7" fill="#E0485A"/><text x="13" y="14.6" font-size="5.5" font-weight="700" fill="#fff" text-anchor="middle">PDF</text><text x="16" y="25" font-size="7" font-weight="700" fill="#1A1200" text-anchor="middle">งาน</text>' },
+  zip:    { label: 'ส่งพรุ่งนี้', svg: '<rect x="6" y="3" width="20" height="26" rx="2" fill="#F4B860"/><path d="M15 3h2v2h-2zM17 5h2v2h-2zM15 7h2v2h-2zM17 9h2v2h-2z" fill="#1A1200"/><rect x="14" y="11" width="4" height="4" rx="1" fill="#1A1200"/><text x="16" y="21.5" font-size="5" font-weight="700" fill="#1A1200" text-anchor="middle">ส่ง</text><text x="16" y="27" font-size="5" font-weight="700" fill="#1A1200" text-anchor="middle">พรุ่งนี้</text>' },
+  boss:   { label: 'หัวหน้างาน', svg: '<path d="M8 29v-8a8 8 0 0 1 16 0v8z" fill="#2A3463"/><path d="M16 14l-1.5 2 1.5 6 1.5-6z" fill="#E0485A"/><circle cx="16" cy="8" r="5" fill="#F3D2B3"/><path d="M11 7q5-6 10 0" fill="#1A1200"/><rect x="4" y="20" width="24" height="7" rx="2" fill="#F3F1E8"/><text x="16" y="25.4" font-size="5" font-weight="700" fill="#1A1200" text-anchor="middle">หัวหน้า</text>' },
+  dog:    { label: 'น้องหมา', svg: '<path d="M7 7q-4 8 2 12l2-9zM25 7q4 8-2 12l-2-9z" fill="#8A5A3C"/><ellipse cx="16" cy="17" rx="9" ry="10" fill="#C98B4A"/><ellipse cx="16" cy="22" rx="5" ry="4" fill="#F3D2B3"/><circle cx="12.5" cy="15" r="1.4" fill="#1A1200"/><circle cx="19.5" cy="15" r="1.4" fill="#1A1200"/><ellipse cx="16" cy="20" rx="2" ry="1.4" fill="#1A1200"/>' },
+  cat:    { label: 'น้องแมว', svg: '<path d="M6 5l4 8H5zM26 5l-4 8h5z" fill="#F4B860"/><ellipse cx="16" cy="18" rx="10" ry="9" fill="#F4B860"/><circle cx="12" cy="17" r="1.4" fill="#1A1200"/><circle cx="20" cy="17" r="1.4" fill="#1A1200"/><path d="M15 20h2l-1 1.2z" fill="#E0485A"/><path d="M3 19h6M3 22h6M23 19h6M23 22h6" stroke="#1A1200" stroke-width=".7"/>' },
+  mail:   { label: 'อีเมลด่วน', svg: '<rect x="3" y="9" width="24" height="17" rx="2" fill="#F3F1E8"/><path d="M3 10l12 9 12-9" fill="none" stroke="#A3AACB" stroke-width="1.5"/><rect x="17" y="3" width="13" height="8" rx="2" fill="#E0485A"/><text x="23.5" y="9" font-size="5.5" font-weight="700" fill="#fff" text-anchor="middle">ด่วน</text>' },
+  bill:   { label: 'บิลค่าไฟ', svg: '<path d="M8 3h16v26l-2.7-2-2.6 2-2.7-2-2.7 2-2.6-2L8 29z" fill="#F3F1E8"/><text x="16" y="11" font-size="5.5" font-weight="700" fill="#1A1200" text-anchor="middle">ค่าไฟ</text><path d="M11 15h10M11 19h10" stroke="#A3AACB"/><text x="16" y="25" font-size="5" font-weight="700" fill="#E0485A" text-anchor="middle">฿฿฿</text>' },
+  bug:    { label: 'บั๊ก', svg: '<path d="M9 14l-4-2M9 19H4M9 24l-4 2M23 14l4-2M23 19h5M23 24l4 2M14 5l-2-3M18 5l2-3" stroke="#6BD49B" stroke-width="1.4" stroke-linecap="round"/><ellipse cx="16" cy="18" rx="7" ry="9" fill="#6BD49B"/><path d="M16 10v17" stroke="#1E2650" stroke-width="1.2"/><circle cx="16" cy="8" r="3.5" fill="#2F8F6A"/>' },
+  ex:     { label: 'แฟนเก่า', svg: '<path d="M16 28C16 28 3 20 3 11a6.5 6.5 0 0 1 13-2a6.5 6.5 0 0 1 13 2c0 9-13 17-13 17z" fill="#F28DB2"/><path d="M16 9l-2.5 6 4 3-3 5 1.5 5" fill="none" stroke="#0B1026" stroke-width="1.6" stroke-linejoin="round"/>' },
+  ot:     { label: 'OT', svg: '<circle cx="15" cy="18" r="11" fill="#F3F1E8" stroke="#E0485A" stroke-width="2"/><path d="M15 11v7l4 3" stroke="#1A1200" stroke-width="1.8" stroke-linecap="round" fill="none"/><rect x="18" y="2" width="12" height="8" rx="2" fill="#E0485A"/><text x="24" y="8.2" font-size="5.5" font-weight="700" fill="#fff" text-anchor="middle">OT</text>' },
+  lazy:   { label: 'ความขี้เกียจ', svg: '<rect x="3" y="13" width="26" height="14" rx="6" fill="#B9A7F0"/><text x="8" y="12" font-size="6" font-weight="700" fill="#EEF0FA">z</text><text x="13" y="9" font-size="7" font-weight="700" fill="#EEF0FA">z</text><text x="19" y="7" font-size="8" font-weight="700" fill="#EEF0FA">Z</text>' },
+  monday: { label: 'วันจันทร์', svg: '<rect x="5" y="6" width="22" height="22" rx="3" fill="#F3F1E8"/><rect x="5" y="6" width="22" height="7" rx="3" fill="#F4B860"/><path d="M10 3v6M22 3v6" stroke="#1A1200" stroke-width="2" stroke-linecap="round"/><text x="16" y="24" font-size="6.5" font-weight="700" fill="#1A1200" text-anchor="middle">จันทร์</text>' },
+};
+const MAX_CHARMS = 3;
+function charmSVG(id, size = 20) {
+  const c = CHARMS[id];
+  return c ? `<svg class="charm-ico" width="${size}" height="${size}" viewBox="0 0 32 32" aria-hidden="true">${c.svg}</svg>` : '';
+}
+function charmIds(list) { return (list || []).filter((c) => CHARMS[c]).slice(0, MAX_CHARMS); }
+function charmLabels(list) { return charmIds(list).map((c) => CHARMS[c].label); }
+
 const SPEED = 12;          // px ต่อวินาที ที่กระทงลอยไปทางขวา
 const CODE_RE = /^[A-Z0-9-]{4,20}$/;
 
@@ -40,7 +64,7 @@ const state = {
   channel: null,
   selected: null,
   whoFilter: 'all',
-  draft: { base: 'leaf', flower: 'rose', vis: 'room', tags: new Set() },
+  draft: { base: 'leaf', flower: 'rose', vis: 'room', tags: new Set(), charms: new Set() },
   els: new Map(),           // krathong_id -> element
   newIds: new Set(),
   raf: 0,
@@ -211,7 +235,7 @@ async function openRoom(code) {
   state.room = room;
   $('#room-name-label').textContent = room.name;
   document.title = `${room.name} — LONG-KLONG`;
-  $('#make-tie-wrap').hidden = room.kind === 'public';
+  $('#make-tie-wrap').hidden = false;
 
   await ensureName();
   if (state.room?.code !== code) return; // ผู้ใช้ออกไปแล้ว
@@ -323,7 +347,7 @@ function floatedNames() {
 function renderHeader() {
   if (!state.room) return;
   const floated = floatedNames();
-  const everyone = new Set([...state.members.keys(), ...floated]);
+  const everyone = state.room.kind === 'public' ? floated : new Set([...state.members.keys(), ...floated]);
   const online = state.online.size;
   $('#room-stats-text').textContent = `สด · ลอยแล้ว ${floated.size} จาก ${everyone.size} คน${online ? ` · ออนไลน์ ${online}` : ''}`;
   const names = [...everyone].slice(0, 3);
@@ -346,6 +370,8 @@ function renderRiver() {
       onclick: () => openDetail(k.id),
     });
     b.insertAdjacentHTML('beforeend', krathongSVG(k.base, k.flower));
+    const cs = charmIds(k.charms);
+    if (cs.length) b.insertAdjacentHTML('beforeend', `<span class="kt-charms">${cs.map((c) => charmSVG(c, 18)).join('')}</span>`);
     b.append(el('span', { class: 'kt-name', text: k.author }));
     if (k.tied_to && state.byId.has(k.tied_to)) b.prepend(el('span', { class: 'kt-string', 'aria-hidden': 'true' }));
     box.append(b);
@@ -408,6 +434,8 @@ function renderDetail() {
   if (p) tags.push(`ลอยคู่กับ ${p.author}`);
   if (k.for_name) tags.push(`ลอยให้ ${k.for_name}`);
   (k.tags || []).forEach((t) => tags.push(`@${t}`));
+  const cl = charmLabels(k.charms);
+  if (cl.length) tags.push(`ลอยไปด้วย: ${cl.join(', ')}`);
   $('#detail-tags').replaceChildren(...tags.map((t) => el('span', { class: 'chip-static', text: t })));
 
   const c = state.reactions.get(k.id) || { fire: 0, heart: 0 };
@@ -415,7 +443,7 @@ function renderDetail() {
   $('#detail-heart').textContent = c.heart || 0;
 
   const tieBtn = $('#btn-tie-this');
-  const canTie = state.room?.kind !== 'public' && k.author !== state.me && !isTaken(k);
+  const canTie = k.author !== state.me && !isTaken(k);
   tieBtn.hidden = !canTie;
 }
 $$('.react').forEach((b) => b.addEventListener('click', async () => {
@@ -437,6 +465,7 @@ $('#btn-tie-this').addEventListener('click', () => {
 function openMake(tieTo = null) {
   const d = state.draft;
   d.tags = new Set();
+  d.charms = new Set();
   $('#make-wish').value = '';
   $('#make-tags').value = '';
   $('#make-for').value = '';
@@ -470,7 +499,20 @@ function openMake(tieTo = null) {
 }
 function renderMakeChoices() {
   const d = state.draft;
-  $('#make-preview').innerHTML = krathongSVG(d.base, d.flower, 150);
+  $('#make-preview').innerHTML = krathongSVG(d.base, d.flower, 150) + (d.charms.size ? `<span class="preview-charms">${[...d.charms].map((c) => charmSVG(c, 40)).join('')}</span>` : '');
+  $('#make-charms').replaceChildren(...Object.entries(CHARMS).map(([id, c]) => {
+    const on = d.charms.has(id);
+    const b = el('button', { type: 'button', class: `charm${on ? ' is-on' : ''}`, 'aria-pressed': String(on) });
+    b.insertAdjacentHTML('beforeend', charmSVG(id, 34));
+    b.append(el('span', { text: c.label }));
+    b.addEventListener('click', () => {
+      if (d.charms.has(id)) d.charms.delete(id);
+      else if (d.charms.size >= MAX_CHARMS) return toast(`เลือกได้สูงสุด ${MAX_CHARMS} อย่าง`);
+      else d.charms.add(id);
+      renderMakeChoices();
+    });
+    return b;
+  }));
   $('#make-bases').replaceChildren(...Object.entries(BASES).map(([id, b]) => {
     const c = el('button', { type: 'button', class: `chip${d.base === id ? ' is-on' : ''}`, 'aria-pressed': String(d.base === id), text: b.name });
     c.addEventListener('click', () => { d.base = id; renderMakeChoices(); });
@@ -512,6 +554,7 @@ $('#form-make').addEventListener('submit', async (e) => {
       wish: d.vis === 'room' && wish ? wish : null,
       tied_to: tie && state.byId.has(tie) && !isTaken(state.byId.get(tie)) ? tie : null,
       tags,
+      charms: [...d.charms].filter((c) => CHARMS[c]).slice(0, MAX_CHARMS),
       for_name: clean($('#make-for').value) || null,
       lane: Math.round((0.08 + Math.random() * 0.84) * 1000) / 1000,
     };
@@ -547,7 +590,7 @@ $$('#who-filters .chip').forEach((b) => b.addEventListener('click', () => {
 function renderWho() {
   if (!state.room) return;
   const floated = floatedNames();
-  const everyone = new Set([...state.members.keys(), ...floated]);
+  const everyone = state.room.kind === 'public' ? floated : new Set([...state.members.keys(), ...floated]);
   const total = Math.max(everyone.size, 1);
   const count = $('#who-count');
   count.replaceChildren(String(floated.size), el('small', { text: ` / ${everyone.size} คนลอยแล้ว` }));
@@ -574,6 +617,8 @@ function renderWho() {
     if (p) bits.push(`ลอยคู่กับ ${p.author}`);
     if (k.for_name) bits.push(`ลอยให้ ${k.for_name}`);
     if (k.tags?.length) bits.push(`ลอยกับ ${k.tags.map((t) => '@' + t).join(' ')}`);
+    const cl = charmLabels(k.charms);
+    if (cl.length) bits.push(`ลอย${cl.join(', ')}ไปด้วย`);
     const badge = p ? ['ลอยคู่', 'badge badge-couple'] : k.for_name ? ['ลอยให้', 'badge badge-for'] : k.tags?.length ? ['แท็ก', 'badge'] : null;
     const li = el('li', { class: 'who-item' },
       avatar(k.author),
@@ -586,7 +631,7 @@ function renderWho() {
     return li;
   }));
 
-  const pending = [...state.members.keys()].filter((n) => !floated.has(n));
+  const pending = state.room.kind === 'public' ? [] : [...state.members.keys()].filter((n) => !floated.has(n));
   $('#who-pending-wrap').hidden = pending.length === 0;
   $('#who-pending-title').textContent = `ยังไม่ลอย ${pending.length} คน`;
   const link = roomLink(state.room.code);
@@ -624,7 +669,7 @@ $('#btn-memory').addEventListener('click', () => {
   $('#memory-year').textContent = `ลอยกระทง ${thaiYear()}`;
   const kt = $('#memory-krathongs');
   kt.innerHTML = '';
-  if (mine) kt.insertAdjacentHTML('beforeend', krathongSVG(mine.base, mine.flower, 72));
+  if (mine) kt.insertAdjacentHTML('beforeend', krathongSVG(mine.base, mine.flower, 72) + charmIds(mine.charms).map((c) => charmSVG(c, 26)).join(''));
   if (partner) {
     kt.append(el('span', { class: 'tie' }));
     kt.insertAdjacentHTML('beforeend', krathongSVG(partner.base, partner.flower, 72));

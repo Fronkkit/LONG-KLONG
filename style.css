@@ -239,6 +239,16 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 }
 .toast.show { transform: translateX(-50%) translateY(0); }
 
+/* ---------- ของที่ลอยไปด้วย ---------- */
+.charm-ico text { font-family: 'Anuphan', sans-serif; }
+.charms { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.charm { display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 72px; padding: 8px 4px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--bg); color: var(--text-2); font-size: 11px; line-height: 1.3; text-align: center; }
+.charm.is-on { border-color: var(--gold); background: #2E2614; color: var(--gold); font-weight: 600; }
+.preview-charms { display: flex; gap: 2px; margin-left: -18px; align-self: flex-end; margin-bottom: 26px; }
+.kt-charms { position: absolute; left: 50px; top: 22px; display: flex; gap: 0; pointer-events: none; }
+.kt-charms svg { filter: none; margin-left: -4px; }
+.memory-krathongs .charm-ico { margin-bottom: 6px; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
